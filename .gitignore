@@ -188,3 +188,4 @@ FakesAssemblies/
 
 # Nuget Packages
 packages/
+AssemblyInfo.cs.out
