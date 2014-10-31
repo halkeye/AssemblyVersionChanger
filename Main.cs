@@ -1,6 +1,5 @@
 using CommandLine;
 using CommandLine.Text;
-using NuGet;
 using System;
 using System.IO;
 using System.Text;
@@ -11,9 +10,9 @@ namespace AssemblyInfoUtil
     /// <summary>
     /// Summary description for AssemblyVersionChanger.
     /// </summary>
-    class AssemblyVersionChanger
+    public class AssemblyVersionChanger
     {
-        class Options
+        public class Options
         {
             [OptionArray('i', "input", Required = true, HelpText = "Input file(s) to read.")]
             public string[] InputFiles { get; set; }
@@ -40,8 +39,10 @@ namespace AssemblyInfoUtil
             }
 
         }
+
         private static Regex reAssemblyVersion = new Regex(@"[<\[]assembly:\s*AssemblyVersion\(\s*""([0-9\.]+)""\s*\)[\]>]", RegexOptions.IgnoreCase);
         private static Regex reAssemblyFileVersion = new Regex(@"[<\[]assembly:\s*AssemblyFileVersion\(\s*""([0-9\.]+)""\s*\)[\]>]", RegexOptions.IgnoreCase);
+
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -65,33 +66,8 @@ namespace AssemblyInfoUtil
                     String line;
 
                     while ((line = reader.ReadLine()) != null) {
-                        // http://msdn.microsoft.com/en-us/library/twcw2f1c(v=vs.110).aspx
-                        Match m = reAssemblyVersion.Match(line);
-                        if (!m.Success)
-                        {
-                            m = reAssemblyFileVersion.Match(line);
-                        }
-
-                        if (m.Success)
-                        {
-                            SemanticVersion v = SemanticVersion.Parse(m.Groups[1].Value);
-                            string[] newVersion = new string[] {
-                                options.Major ?? v.Version.Major.ToString(),
-                                options.Minor ?? v.Version.Minor.ToString(),
-                                options.Revision ?? v.Version.Revision.ToString(),
-                                options.Build ?? v.Version.Build.ToString()
-                            };
-
-                            writer.WriteLine(
-                                line.Substring(0, m.Groups[1].Index) +
-                                String.Join(".",newVersion) +
-                                line.Substring(m.Groups[1].Index + m.Groups[1].Length)
-                            );
-                        }
-                        else
-                        {
-                            writer.WriteLine(line);
-                        }
+                        line = processLine(options, line);
+                        writer.WriteLine(line);
                     }
                     reader.Close();
                     writer.Close();
@@ -102,5 +78,37 @@ namespace AssemblyInfoUtil
                 System.Console.WriteLine("Done!");
             }
 		}
+
+        public static string processLine(Options options, string line)
+        {
+            // http://msdn.microsoft.com/en-us/library/twcw2f1c(v=vs.110).aspx
+            Match m = reAssemblyVersion.Match(line);
+            if (!m.Success) { m = reAssemblyFileVersion.Match(line); }
+            if (m.Success)
+            {
+                string[] oldVersion = m.Groups[1].Value.Split('.');
+                if (!string.IsNullOrEmpty(options.Build) && oldVersion.Length >= 4)
+                {
+                    oldVersion[3] = options.Build;
+                }
+                if (!string.IsNullOrEmpty(options.Revision) && oldVersion.Length >= 3)
+                {
+                    oldVersion[2] = options.Revision;
+                }
+                if (!string.IsNullOrEmpty(options.Minor) && oldVersion.Length >= 2)
+                {
+                    oldVersion[1] = options.Minor;
+                }
+                if (!string.IsNullOrEmpty(options.Major) && oldVersion.Length >= 1)
+                {
+                    oldVersion[0] = options.Major;
+                }
+
+                return line.Substring(0, m.Groups[1].Index) +
+                    String.Join(".", oldVersion) +
+                    line.Substring(m.Groups[1].Index + m.Groups[1].Length);
+            }
+            return line;
+        }
     }
 }
