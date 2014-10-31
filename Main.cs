@@ -72,8 +72,8 @@ namespace AssemblyInfoUtil
                     reader.Close();
                     writer.Close();
 
-                    //File.Delete(file);
-                    //File.Move(file + ".out", file);
+                    File.Delete(file);
+                    File.Move(file + ".out", file);
                 }
                 System.Console.WriteLine("Done!");
             }
