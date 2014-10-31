@@ -50,8 +50,11 @@
     </Otherwise>
   </Choose>
   <ItemGroup>
-    <Compile Include="UnitTest1.cs" />
+    <Compile Include="TestFourVersion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="TestOneVersion.cs" />
+    <Compile Include="TestThreeVersion.cs" />
+    <Compile Include="TestTwoVersion.cs" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\AssemblyVersionChanger.csproj">
