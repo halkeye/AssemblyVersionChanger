@@ -26,7 +26,7 @@ namespace AssemblyInfoUtil
             [Option("revision", HelpText = "New Revision version number.")]
             public string Revision { get; set; }
 
-            [Option("buid", HelpText = "New Build version number.")]
+            [Option("build", HelpText = "New Build version number.")]
             public string Build { get; set; }
 
             [Option("version", HelpText = "Set version number")]
