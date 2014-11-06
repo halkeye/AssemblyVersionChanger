@@ -2,6 +2,7 @@ using CommandLine;
 using CommandLine.Text;
 using System;
 using System.IO;
+using System.IO.Abstractions;
 using System.Text;
 using System.Text.RegularExpressions;
 
@@ -42,7 +43,6 @@ namespace AssemblyInfoUtil
 
         private static Regex reAssemblyVersion = new Regex(@"[<\[]assembly:\s*AssemblyVersion\(\s*""([0-9\.]+)""\s*\)[\]>]", RegexOptions.IgnoreCase);
         private static Regex reAssemblyFileVersion = new Regex(@"[<\[]assembly:\s*AssemblyFileVersion\(\s*""([0-9\.]+)""\s*\)[\]>]", RegexOptions.IgnoreCase);
-
         /// <summary>
         /// The main entry point for the application.
         /// </summary>
@@ -52,32 +52,40 @@ namespace AssemblyInfoUtil
 
             if (CommandLine.Parser.Default.ParseArgumentsStrict(args, options))
             {
-                foreach (string file in options.InputFiles)
-                {
-                    if ( !File.Exists(file) )
-                    {
-                        System.Console.WriteLine("Error: Can not find file \"" + file + "\"");
-                        return;
-                    }
-
-                    System.Console.Write("Processing \"" + file + "\"...");
-                    StreamReader reader = new StreamReader(file);
-                    StreamWriter writer = new StreamWriter(file + ".out");
-                    String line;
-
-                    while ((line = reader.ReadLine()) != null) {
-                        line = processLine(options, line);
-                        writer.WriteLine(line);
-                    }
-                    reader.Close();
-                    writer.Close();
-
-                    File.Delete(file);
-                    File.Move(file + ".out", file);
-                }
-                System.Console.WriteLine("Done!");
+                AssemblyVersionChanger avc = new AssemblyVersionChanger();
+                avc.run(options, new FileSystem());
             }
 		}
+
+        public void run(Options options, IFileSystem fs)
+        {
+            foreach (string file in options.InputFiles)
+            {
+                if (!fs.File.Exists(file))
+                {
+                    System.Console.WriteLine("Error: Can not find file \"" + file + "\"");
+                    return;
+                }
+
+                System.Console.Write("Processing \"" + file + "\"...");
+                StreamReader reader = fs.File.OpenText(file);
+                StreamWriter writer = fs.File.CreateText(file + ".out");
+                String line;
+
+                while ((line = reader.ReadLine()) != null)
+                {
+                    line = processLine(options, line);
+                    writer.WriteLine(line);
+                }
+                reader.Close();
+                writer.Close();
+
+                fs.File.Delete(file);
+                fs.File.Move(file + ".out", file);
+            }
+            System.Console.WriteLine("Done!");
+        }
+
 
         public static string processLine(Options options, string line)
         {
